@@ -614,7 +614,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
             final String content = YoutubeParsingHelper.getFirstCollaborator(
                 videoOwnerRenderer.getObject("navigationEndpoint")
             ).getObject("subtitle").getString("content");
-            subscriberCountText = content.split("•")[1];
+            subscriberCountText = content.split("??)[1];
         }
 
         if (isNullOrEmpty(subscriberCountText)) {
@@ -689,22 +689,28 @@ public class YoutubeStreamExtractor extends StreamExtractor {
     @Override
     public List<AudioStream> getAudioStreams() throws ExtractionException {
         assertPageFetched();
-        return getItags(ADAPTIVE_FORMATS, ItagItem.ItagType.AUDIO,
+        final List<AudioStream> streams = getItags(ADAPTIVE_FORMATS, ItagItem.ItagType.AUDIO,
                 getAudioStreamBuilderHelper(), "audio");
+        ExtractorLogger.d(TAG, "audio streams built url={} count={}", getId(), streams.size());
+        return streams;
     }
 
     @Override
     public List<VideoStream> getVideoStreams() throws ExtractionException {
         assertPageFetched();
-        return getItags(FORMATS, ItagItem.ItagType.VIDEO,
+        final List<VideoStream> streams = getItags(FORMATS, ItagItem.ItagType.VIDEO,
                 getVideoStreamBuilderHelper(false), "video");
+        ExtractorLogger.d(TAG, "video streams built url={} count={}", getId(), streams.size());
+        return streams;
     }
 
     @Override
     public List<VideoStream> getVideoOnlyStreams() throws ExtractionException {
         assertPageFetched();
-        return getItags(ADAPTIVE_FORMATS, ItagItem.ItagType.VIDEO_ONLY,
+        final List<VideoStream> streams = getItags(ADAPTIVE_FORMATS, ItagItem.ItagType.VIDEO_ONLY,
                 getVideoStreamBuilderHelper(true), "video-only");
+        ExtractorLogger.d(TAG, "video-only streams built url={} count={}", getId(), streams.size());
+        return streams;
     }
 
     @Override
@@ -1213,6 +1219,8 @@ public class YoutubeStreamExtractor extends StreamExtractor {
                         }
                     });
 
+            ExtractorLogger.d(TAG, "built streams url={} key={} wanted={} count={}",
+                    videoId, streamingDataKey, itagTypeWanted, streamList.size());
             return streamList;
         } catch (final Exception e) {
             throw new ParsingException(
@@ -1750,3 +1758,6 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         YoutubeStreamExtractor.fetchIosClient = fetchIosClient;
     }
 }
+
+
+
