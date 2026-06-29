@@ -130,6 +130,8 @@ public class YoutubeStreamExtractor extends StreamExtractor {
     @Nullable
     private JsonObject visionOsStreamingData;
     @Nullable
+    private JsonObject webEmbeddedStreamingData;
+    @Nullable
     private JsonObject iosStreamingData;
     @Nullable
     private JsonObject androidStreamingData;
@@ -147,11 +149,14 @@ public class YoutubeStreamExtractor extends StreamExtractor {
     // Also because a nonce should be unique, it should be different between clients used, so
     // three different strings are used.
     private String visionOsCpn;
+    private String webEmbeddedCpn;
     private String iosCpn;
     private String androidCpn;
 
     @Nullable
     private String androidStreamingUrlsPoToken;
+    @Nullable
+    private String webEmbeddedStreamingUrlsPoToken;
     @Nullable
     private String iosStreamingUrlsPoToken;
 
@@ -850,6 +855,8 @@ public class YoutubeStreamExtractor extends StreamExtractor {
 
         setStreamType();
 
+        fetchWebEmbeddedClient(localization, contentCountry, videoId);
+
         if (fetchIosClient) {
             final PoTokenResult iosPoTokenResult = noPoTokenProviderSet ? null
                     : poTokenProviderInstance.getIosClientPoToken(videoId);
@@ -1007,6 +1014,35 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         }
     }
 
+    private void fetchWebEmbeddedClient(@Nonnull final Localization localization,
+                                        @Nonnull final ContentCountry contentCountry,
+                                        @Nonnull final String videoId) {
+        try {
+            webEmbeddedCpn = generateContentPlaybackNonce();
+            final int signatureTimestamp = YoutubeJavaScriptPlayerManager.getSignatureTimestamp(
+                    videoId);
+            final PoTokenProvider poTokenProviderInstance = poTokenProvider;
+            final PoTokenResult webEmbeddedPoTokenResult = poTokenProviderInstance == null
+                    ? null
+                    : poTokenProviderInstance.getWebEmbedClientPoToken(videoId);
+
+            final JsonObject webEmbeddedPlayerResponse = YoutubeStreamHelper
+                    .getWebEmbeddedPlayerResponse(localization, contentCountry, videoId,
+                            webEmbeddedCpn, webEmbeddedPoTokenResult, signatureTimestamp);
+
+            if (!isPlayerResponseNotValid(webEmbeddedPlayerResponse, videoId)) {
+                webEmbeddedStreamingData = webEmbeddedPlayerResponse.getObject(STREAMING_DATA);
+                if (webEmbeddedPoTokenResult != null) {
+                    webEmbeddedStreamingUrlsPoToken = webEmbeddedPoTokenResult
+                            .streamingDataPoToken;
+                }
+            }
+        } catch (final Exception ignored) {
+            // Ignore exceptions related to WEB_EMBEDDED client fetching or parsing, as it is not
+            // compulsory to play contents
+        }
+    }
+
     private void fetchWebClientMetadataAndSetThumbnails(
             @Nonnull final Localization localization,
             @Nonnull final ContentCountry contentCountry,
@@ -1136,6 +1172,8 @@ public class YoutubeStreamExtractor extends StreamExtractor {
             java.util.stream.Stream.of(
                     new Pair<>(androidStreamingData,
                             new Pair<>(androidCpn, androidStreamingUrlsPoToken)),
+                    new Pair<>(webEmbeddedStreamingData,
+                            new Pair<>(webEmbeddedCpn, webEmbeddedStreamingUrlsPoToken)),
                     new Pair<>(visionOsStreamingData, new Pair<>(visionOsCpn, (String) null)),
                     new Pair<>(iosStreamingData,
                             new Pair<>(iosCpn, iosStreamingUrlsPoToken)))
