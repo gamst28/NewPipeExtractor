@@ -1223,6 +1223,9 @@ public class YoutubeStreamExtractor extends StreamExtractor {
                     videoId, streamingDataKey, itagTypeWanted, streamList.size());
             return streamList;
         } catch (final Exception e) {
+            ExtractorLogger.w(TAG,
+                    "getItags failed url={} key={} wanted={} message={}",
+                    getId(), streamingDataKey, itagTypeWanted, e.getMessage(), e);
             throw new ParsingException(
                     "Could not get " + streamTypeExceptionMessage + " streams", e);
         }
@@ -1349,9 +1352,23 @@ public class YoutubeStreamExtractor extends StreamExtractor {
             @Nonnull final ItagItem.ItagType itagTypeWanted,
             @Nonnull final String contentPlaybackNonce,
             @Nullable final String poToken) {
-        if (streamingData == null || !streamingData.has(streamingDataKey)) {
+        if (streamingData == null) {
+            ExtractorLogger.d(TAG,
+                    "streaming data missing url={} key={} data=null wanted={}",
+                    videoId, streamingDataKey, itagTypeWanted);
             return java.util.stream.Stream.empty();
         }
+        if (!streamingData.has(streamingDataKey)) {
+            ExtractorLogger.d(TAG,
+                    "streaming data missing url={} key={} wanted={} availableKeys={}",
+                    videoId, streamingDataKey, itagTypeWanted, streamingData.keySet());
+            return java.util.stream.Stream.empty();
+        }
+
+        ExtractorLogger.d(TAG,
+                "streaming data present url={} key={} wanted={} count={}",
+                videoId, streamingDataKey, itagTypeWanted,
+                streamingData.getArray(streamingDataKey).size());
 
         return streamingData.getArray(streamingDataKey).streamAsJsonObjects()
                 .map(formatData -> {
@@ -1758,6 +1775,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         YoutubeStreamExtractor.fetchIosClient = fetchIosClient;
     }
 }
+
 
 
 
