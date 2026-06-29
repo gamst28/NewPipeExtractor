@@ -83,6 +83,7 @@ import org.schabi.newpipe.extractor.utils.JsonUtils;
 import org.schabi.newpipe.extractor.utils.LocaleCompat;
 import org.schabi.newpipe.extractor.utils.Pair;
 import org.schabi.newpipe.extractor.utils.Parser;
+import org.schabi.newpipe.extractor.utils.ExtractorLogger;
 import org.schabi.newpipe.extractor.utils.Utils;
 
 import java.io.IOException;
@@ -102,6 +103,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class YoutubeStreamExtractor extends StreamExtractor {
+    private static final String TAG = "YoutubeStreamExtractor";
 
     private static final String PREMIERED = "Premiered ";
     private static final String PREMIERED_ON = "Premiered on ";
@@ -954,6 +956,9 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         }
 
         androidStreamingData = playerResponse.getObject(STREAMING_DATA);
+        ExtractorLogger.d(TAG, "android stream-data url={} formats={} adaptive={}", videoId,
+                sizeOfArray(androidStreamingData, FORMATS),
+                sizeOfArray(androidStreamingData, ADAPTIVE_FORMATS));
 
         playerCaptionsTracklistRenderer = playerResponse.getObject(CAPTIONS)
                 .getObject(PLAYER_CAPTIONS_TRACKLIST_RENDERER);
@@ -975,6 +980,9 @@ public class YoutubeStreamExtractor extends StreamExtractor {
 
             if (!isPlayerResponseNotValid(iosPlayerResponse, videoId)) {
                 iosStreamingData = iosPlayerResponse.getObject(STREAMING_DATA);
+                ExtractorLogger.d(TAG, "ios stream-data url={} formats={} adaptive={}", videoId,
+                        sizeOfArray(iosStreamingData, FORMATS),
+                        sizeOfArray(iosStreamingData, ADAPTIVE_FORMATS));
 
                 if (isNullOrEmpty(playerCaptionsTracklistRenderer)) {
                     playerCaptionsTracklistRenderer = iosPlayerResponse.getObject(CAPTIONS)
@@ -1002,6 +1010,9 @@ public class YoutubeStreamExtractor extends StreamExtractor {
 
             if (!isPlayerResponseNotValid(visionOsPlayerResponse, videoId)) {
                 visionOsStreamingData = visionOsPlayerResponse.getObject(STREAMING_DATA);
+                ExtractorLogger.d(TAG, "visionos stream-data url={} formats={} adaptive={}",
+                        videoId, sizeOfArray(visionOsStreamingData, FORMATS),
+                        sizeOfArray(visionOsStreamingData, ADAPTIVE_FORMATS));
 
                 if (isNullOrEmpty(playerCaptionsTracklistRenderer)) {
                     playerCaptionsTracklistRenderer = visionOsPlayerResponse.getObject(CAPTIONS)
@@ -1032,6 +1043,9 @@ public class YoutubeStreamExtractor extends StreamExtractor {
 
             if (!isPlayerResponseNotValid(webEmbeddedPlayerResponse, videoId)) {
                 webEmbeddedStreamingData = webEmbeddedPlayerResponse.getObject(STREAMING_DATA);
+                ExtractorLogger.d(TAG, "web-embedded stream-data url={} formats={} adaptive={}",
+                        videoId, sizeOfArray(webEmbeddedStreamingData, FORMATS),
+                        sizeOfArray(webEmbeddedStreamingData, ADAPTIVE_FORMATS));
                 if (webEmbeddedPoTokenResult != null) {
                     webEmbeddedStreamingUrlsPoToken = webEmbeddedPoTokenResult
                             .streamingDataPoToken;
@@ -1040,7 +1054,15 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         } catch (final Exception ignored) {
             // Ignore exceptions related to WEB_EMBEDDED client fetching or parsing, as it is not
             // compulsory to play contents
+            ExtractorLogger.w(TAG, "web-embedded fetch failed for {}", videoId, ignored);
         }
+    }
+
+    private static int sizeOfArray(@Nullable final JsonObject streamingData,
+                                   @Nonnull final String key) {
+        return streamingData != null && streamingData.has(key)
+                ? streamingData.getArray(key).size()
+                : 0;
     }
 
     private void fetchWebClientMetadataAndSetThumbnails(
