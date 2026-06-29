@@ -962,9 +962,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         }
 
         androidStreamingData = playerResponse.getObject(STREAMING_DATA);
-        ExtractorLogger.d(TAG, "android stream-data url={} formats={} adaptive={}", videoId,
-                sizeOfArray(androidStreamingData, FORMATS),
-                sizeOfArray(androidStreamingData, ADAPTIVE_FORMATS));
+        logStreamingData("android", videoId, androidStreamingData);
 
         playerCaptionsTracklistRenderer = playerResponse.getObject(CAPTIONS)
                 .getObject(PLAYER_CAPTIONS_TRACKLIST_RENDERER);
@@ -986,9 +984,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
 
             if (!isPlayerResponseNotValid(iosPlayerResponse, videoId)) {
                 iosStreamingData = iosPlayerResponse.getObject(STREAMING_DATA);
-                ExtractorLogger.d(TAG, "ios stream-data url={} formats={} adaptive={}", videoId,
-                        sizeOfArray(iosStreamingData, FORMATS),
-                        sizeOfArray(iosStreamingData, ADAPTIVE_FORMATS));
+                logStreamingData("ios", videoId, iosStreamingData);
 
                 if (isNullOrEmpty(playerCaptionsTracklistRenderer)) {
                     playerCaptionsTracklistRenderer = iosPlayerResponse.getObject(CAPTIONS)
@@ -1016,9 +1012,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
 
             if (!isPlayerResponseNotValid(visionOsPlayerResponse, videoId)) {
                 visionOsStreamingData = visionOsPlayerResponse.getObject(STREAMING_DATA);
-                ExtractorLogger.d(TAG, "visionos stream-data url={} formats={} adaptive={}",
-                        videoId, sizeOfArray(visionOsStreamingData, FORMATS),
-                        sizeOfArray(visionOsStreamingData, ADAPTIVE_FORMATS));
+                logStreamingData("visionos", videoId, visionOsStreamingData);
 
                 if (isNullOrEmpty(playerCaptionsTracklistRenderer)) {
                     playerCaptionsTracklistRenderer = visionOsPlayerResponse.getObject(CAPTIONS)
@@ -1049,9 +1043,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
 
             if (!isPlayerResponseNotValid(webEmbeddedPlayerResponse, videoId)) {
                 webEmbeddedStreamingData = webEmbeddedPlayerResponse.getObject(STREAMING_DATA);
-                ExtractorLogger.d(TAG, "web-embedded stream-data url={} formats={} adaptive={}",
-                        videoId, sizeOfArray(webEmbeddedStreamingData, FORMATS),
-                        sizeOfArray(webEmbeddedStreamingData, ADAPTIVE_FORMATS));
+                logStreamingData("web-embedded", videoId, webEmbeddedStreamingData);
                 if (webEmbeddedPoTokenResult != null) {
                     webEmbeddedStreamingUrlsPoToken = webEmbeddedPoTokenResult
                             .streamingDataPoToken;
@@ -1064,6 +1056,15 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         }
     }
 
+    private static void logStreamingData(@Nonnull final String client,
+                                         @Nonnull final String videoId,
+                                         @Nullable final JsonObject streamingData) {
+        ExtractorLogger.d(TAG, "{} stream-data url={} keys={} formats={} adaptive={}",
+                client, videoId,
+                streamingData == null ? null : streamingData.keySet(),
+                sizeOfArray(streamingData, FORMATS),
+                sizeOfArray(streamingData, ADAPTIVE_FORMATS));
+    }
     private static int sizeOfArray(@Nullable final JsonObject streamingData,
                                    @Nonnull final String key) {
         return streamingData != null && streamingData.has(key)
