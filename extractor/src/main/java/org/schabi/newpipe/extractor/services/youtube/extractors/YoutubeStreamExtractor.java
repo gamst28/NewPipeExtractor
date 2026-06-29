@@ -1348,14 +1348,27 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         return streamingData.getArray(streamingDataKey).streamAsJsonObjects()
                 .map(formatData -> {
                     try {
-                        final ItagItem itagItem = ItagItem.getItag(formatData.getInt("itag"));
+                        final int itagId = formatData.getInt("itag");
+                        final ItagItem itagItem = ItagItem.getItag(itagId);
+                        ExtractorLogger.d(TAG,
+                                "candidate url={} key={} itag={} classified={} wanted={}",
+                                videoId, streamingDataKey, itagId, itagItem.itagType,
+                                itagTypeWanted);
                         if (itagItem.itagType == itagTypeWanted) {
                             return buildAndAddItagInfoToList(videoId, formatData, itagItem,
                                     itagItem.itagType, contentPlaybackNonce, poToken);
+                        } else {
+                            ExtractorLogger.d(TAG,
+                                    "rejected by type url={} key={} itag={} classified={} wanted={}",
+                                    videoId, streamingDataKey, itagId, itagItem.itagType,
+                                    itagTypeWanted);
                         }
                     } catch (final ExtractionException ignored) {
                         // If the itag is not supported, the n parameter of HTML5 clients cannot be
                         // decoded or buildAndAddItagInfoToList fails, we end up here
+                        ExtractorLogger.w(TAG,
+                                "unsupported-or-failed stream candidate url={} key={} format={}",
+                                videoId, streamingDataKey, formatData, ignored);
                     }
                     return null;
                 })
