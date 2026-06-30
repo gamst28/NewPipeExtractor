@@ -859,7 +859,9 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         final PoTokenResult androidPoTokenResult = noPoTokenProviderSet ? null
                 : poTokenProviderInstance.getAndroidClientPoToken(videoId);
 
+        ExtractorLogger.d(TAG, "B1 before fetchAndroidClient url={}", videoId);
         fetchAndroidClient(localization, contentCountry, videoId, androidPoTokenResult);
+        ExtractorLogger.d(TAG, "B2 after fetchAndroidClient url={}", videoId);
 
         setStreamType();
 
@@ -945,9 +947,12 @@ public class YoutubeStreamExtractor extends StreamExtractor {
                                     @Nonnull final String videoId,
                                     @Nullable final PoTokenResult androidPoTokenResult)
             throws IOException, ExtractionException {
+        ExtractorLogger.d(TAG, "A1 fetchAndroidClient entered url={}", videoId);
         androidCpn = generateContentPlaybackNonce();
+        ExtractorLogger.d(TAG, "A2 cpn generated url={}", videoId);
 
         if (androidPoTokenResult == null) {
+            ExtractorLogger.d(TAG, "A3 before getAndroidReelPlayerResponse url={}", videoId);
             playerResponse = YoutubeStreamHelper.getAndroidReelPlayerResponse(
                     contentCountry, localization, videoId, androidCpn);
         } else {
@@ -956,12 +961,21 @@ public class YoutubeStreamExtractor extends StreamExtractor {
                     androidPoTokenResult);
         }
 
+        ExtractorLogger.d(TAG, "A4 before checkPlayabilityStatus url={}", videoId);
         checkPlayabilityStatus(playerResponse.getObject(PLAYABILITY_STATUS));
+        ExtractorLogger.d(TAG, "A5 playability checked url={}", videoId);
         if (isPlayerResponseNotValid(playerResponse, videoId)) {
             throw new ExtractionException("ANDROID player response is not valid");
         }
 
         androidStreamingData = playerResponse.getObject(STREAMING_DATA);
+        ExtractorLogger.d(TAG, "A6 streamingData assigned url={} keys={} formats={} adaptive={}",
+                videoId,
+                androidStreamingData.keySet(),
+                androidStreamingData.has(FORMATS) ? androidStreamingData.getArray(FORMATS).size() : 0,
+                androidStreamingData.has(ADAPTIVE_FORMATS)
+                        ? androidStreamingData.getArray(ADAPTIVE_FORMATS).size()
+                        : 0);
         logStreamingData("android", videoId, androidStreamingData);
 
         playerCaptionsTracklistRenderer = playerResponse.getObject(CAPTIONS)
