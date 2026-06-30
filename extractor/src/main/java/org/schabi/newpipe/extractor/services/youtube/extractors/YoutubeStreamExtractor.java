@@ -614,7 +614,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
             final String content = YoutubeParsingHelper.getFirstCollaborator(
                 videoOwnerRenderer.getObject("navigationEndpoint")
             ).getObject("subtitle").getString("content");
-            subscriberCountText = content.split("??)[1];
+            subscriberCountText = content.split("\u2022")[1];
         }
 
         if (isNullOrEmpty(subscriberCountText)) {
