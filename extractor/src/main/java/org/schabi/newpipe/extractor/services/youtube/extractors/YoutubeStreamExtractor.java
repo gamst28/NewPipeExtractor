@@ -1409,6 +1409,12 @@ public class YoutubeStreamExtractor extends StreamExtractor {
                         ExtractorLogger.w(TAG,
                                 "unsupported-or-failed stream candidate url={} key={} format={}",
                                 videoId, streamingDataKey, formatData, ignored);
+                        // ── DEBUG: 예외 상세 ──────────────────────────────────
+                        ExtractorLogger.w(TAG,
+                                "[buildItag] EXCEPTION videoId={} itag={} exClass={} exMsg={}",
+                                videoId, formatData.getInt("itag"),
+                                ignored.getClass().getName(), ignored.getMessage());
+                        // ──────────────────────────────────────────────────────
                     }
                     return null;
                 })
@@ -1422,22 +1428,70 @@ public class YoutubeStreamExtractor extends StreamExtractor {
             @Nonnull final ItagItem.ItagType itagType,
             @Nonnull final String contentPlaybackNonce,
             @Nullable final String poToken) throws ExtractionException {
+        // ── DEBUG: 함수 진입 ──────────────────────────────────────────────────
+        final int dbgItag = formatData.getInt("itag");
+        final String dbgMime = formatData.getString("mimeType", "(none)");
+        final boolean dbgHasUrl = formatData.has("url");
+        final boolean dbgHasCipher = formatData.has(CIPHER);
+        final boolean dbgHasSigCipher = formatData.has(SIGNATURE_CIPHER);
+        ExtractorLogger.d(TAG,
+                "[buildItag] ENTER videoId={} itag={} mimeType={}"
+                + " hasUrl={} hasCipher={} hasSignatureCipher={}",
+                videoId, dbgItag, dbgMime, dbgHasUrl, dbgHasCipher, dbgHasSigCipher);
+        // ─────────────────────────────────────────────────────────────────────
+
         String streamUrl;
         if (formatData.has("url")) {
             streamUrl = formatData.getString("url");
+            // ── DEBUG ──────────────────────────────────────────────────────
+            ExtractorLogger.d(TAG,
+                    "[buildItag] url-branch videoId={} itag={} streamUrl-prefix={}",
+                    videoId, dbgItag,
+                    streamUrl != null && streamUrl.length() > 80
+                            ? streamUrl.substring(0, 80) : streamUrl);
+            // ──────────────────────────────────────────────────────────────
         } else {
             // This url has an obfuscated signature
             final String cipherString = formatData.getString(CIPHER,
                     formatData.getString(SIGNATURE_CIPHER));
 
+            // ── DEBUG ──────────────────────────────────────────────────────
+            ExtractorLogger.d(TAG,
+                    "[buildItag] cipher-branch videoId={} itag={} cipherStringEmpty={}",
+                    videoId, dbgItag, isNullOrEmpty(cipherString));
+            // ──────────────────────────────────────────────────────────────
+
             if (isNullOrEmpty(cipherString)) {
+                // ── DEBUG ──────────────────────────────────────────────────
+                ExtractorLogger.w(TAG,
+                        "[buildItag] SKIP cipherString null/empty videoId={} itag={}",
+                        videoId, dbgItag);
+                // ──────────────────────────────────────────────────────────
                 return null;
             }
 
             final var cipher = Parser.compatParseMap(cipherString);
+            // ── DEBUG ──────────────────────────────────────────────────────
+            ExtractorLogger.d(TAG,
+                    "[buildItag] parsed cipher videoId={} itag={} cipherKeys={}",
+                    videoId, dbgItag, cipher.keySet());
+            // ──────────────────────────────────────────────────────────────
+
             final String signature = YoutubeJavaScriptPlayerManager.deobfuscateSignature(videoId,
                     cipher.getOrDefault("s", ""));
+            // ── DEBUG ──────────────────────────────────────────────────────
+            ExtractorLogger.d(TAG,
+                    "[buildItag] deobfuscatedSignature videoId={} itag={} signatureEmpty={}",
+                    videoId, dbgItag, isNullOrEmpty(signature));
+            // ──────────────────────────────────────────────────────────────
+
             streamUrl = cipher.get("url") + "&" + cipher.get("sp") + "=" + signature;
+            // ── DEBUG ──────────────────────────────────────────────────────
+            ExtractorLogger.d(TAG,
+                    "[buildItag] streamUrl-after-sig videoId={} itag={} streamUrl-prefix={}",
+                    videoId, dbgItag,
+                    streamUrl.length() > 80 ? streamUrl.substring(0, 80) : streamUrl);
+            // ──────────────────────────────────────────────────────────────
         }
 
         // Decode the n parameter if it is present
@@ -1446,8 +1500,20 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         // Exceptions thrown by
         // YoutubeJavaScriptPlayerManager.getUrlWithThrottlingParameterDeobfuscated are so
         // propagated to the parent which ignores streams in this case
+        // ── DEBUG ──────────────────────────────────────────────────────────
+        ExtractorLogger.d(TAG,
+                "[buildItag] before-throttle-deobfuscate videoId={} itag={}",
+                videoId, dbgItag);
+        // ──────────────────────────────────────────────────────────────────
         streamUrl = YoutubeJavaScriptPlayerManager.getUrlWithThrottlingParameterDeobfuscated(
                 videoId, streamUrl);
+        // ── DEBUG ──────────────────────────────────────────────────────────
+        ExtractorLogger.d(TAG,
+                "[buildItag] after-throttle-deobfuscate videoId={} itag={} streamUrl-prefix={}",
+                videoId, dbgItag,
+                streamUrl != null && streamUrl.length() > 80
+                        ? streamUrl.substring(0, 80) : streamUrl);
+        // ──────────────────────────────────────────────────────────────────
 
         // Add the content playback nonce to the stream URL
         streamUrl += "&" + CPN + "=" + contentPlaybackNonce;
@@ -1531,6 +1597,14 @@ public class YoutubeStreamExtractor extends StreamExtractor {
             // Ended livestreams are returned as non URL streams
             itagInfo.setIsUrl(streamType != StreamType.POST_LIVE_STREAM);
         }
+
+        // ── DEBUG: 함수 정상 반환 ─────────────────────────────────────────────
+        ExtractorLogger.d(TAG,
+                "[buildItag] RETURN itagInfo videoId={} itag={} isUrl={} contentPrefix={}",
+                videoId, dbgItag, itagInfo.getIsUrl(),
+                itagInfo.getContent() != null && itagInfo.getContent().length() > 60
+                        ? itagInfo.getContent().substring(0, 60) : itagInfo.getContent());
+        // ─────────────────────────────────────────────────────────────────────
 
         return itagInfo;
     }
