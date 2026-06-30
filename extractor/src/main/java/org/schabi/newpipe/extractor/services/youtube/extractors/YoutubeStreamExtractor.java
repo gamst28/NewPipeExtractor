@@ -1062,6 +1062,11 @@ public class YoutubeStreamExtractor extends StreamExtractor {
                     webEmbeddedStreamingUrlsPoToken = webEmbeddedPoTokenResult
                             .streamingDataPoToken;
                 }
+            } else {
+                ExtractorLogger.w(TAG, "web-embedded response invalid for {}. playabilityStatus={}, videoDetails={}",
+                        videoId,
+                        webEmbeddedPlayerResponse.getObject(PLAYABILITY_STATUS),
+                        webEmbeddedPlayerResponse.getObject(VIDEO_DETAILS));
             }
         } catch (final Exception ignored) {
             // Ignore exceptions related to WEB_EMBEDDED client fetching or parsing, as it is not
