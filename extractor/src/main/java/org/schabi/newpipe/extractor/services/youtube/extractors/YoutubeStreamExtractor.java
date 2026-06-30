@@ -1212,6 +1212,17 @@ public class YoutubeStreamExtractor extends StreamExtractor {
             final String videoId = getId();
             final List<T> streamList = new ArrayList<>();
 
+            // ── DEBUG: 각 클라이언트의 streamingData 상태 ──────────────────────
+            ExtractorLogger.d(TAG,
+                    "[getItags] videoId={} key={} wanted={}"
+                    + " android={} webEmbedded={} visionOs={} ios={}",
+                    videoId, streamingDataKey, itagTypeWanted,
+                    clientDataSummary(androidStreamingData, streamingDataKey),
+                    clientDataSummary(webEmbeddedStreamingData, streamingDataKey),
+                    clientDataSummary(visionOsStreamingData, streamingDataKey),
+                    clientDataSummary(iosStreamingData, streamingDataKey));
+            // ──────────────────────────────────────────────────────────────────
+
             java.util.stream.Stream.of(
                     new Pair<>(androidStreamingData,
                             new Pair<>(androidCpn, androidStreamingUrlsPoToken)),
@@ -1244,6 +1255,24 @@ public class YoutubeStreamExtractor extends StreamExtractor {
             throw new ParsingException(
                     "Could not get " + streamTypeExceptionMessage + " streams", e);
         }
+    }
+
+    /**
+     * Returns a compact summary string for a streamingData object, e.g. "null",
+     * "formats=2,adaptive=25,hasUrl=y" or "formats=0,adaptive=0,hasUrl=n".
+     * Used only for debug logging.
+     */
+    private static String clientDataSummary(@Nullable final JsonObject sd,
+                                            final String key) {
+        if (sd == null) {
+            return "null";
+        }
+        final int count = sd.has(key) ? sd.getArray(key).size() : 0;
+        // Peek at first entry to see if it has a url field
+        final boolean firstHasUrl = sd.has(key)
+                && !sd.getArray(key).isEmpty()
+                && sd.getArray(key).getObject(0).has("url");
+        return "count=" + count + ",firstHasUrl=" + firstHasUrl;
     }
 
     /**
