@@ -124,7 +124,7 @@ public class YoutubeStreamExtractor extends StreamExtractor {
 
     @Nullable
     private static PoTokenProvider poTokenProvider;
-    private static boolean fetchIosClient;
+    private static boolean fetchIosClient = true;
 
     private JsonObject playerResponse;
     private JsonObject nextResponse;
